@@ -36,8 +36,15 @@ env/
 
 # Database
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+
+# Documents
+*.pdf
 
 # Testing & Linting
 .pytest_cache/

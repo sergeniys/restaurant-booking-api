@@ -72,7 +72,7 @@ async def list_bookings(
     ),
 )
 async def get_booking(
-    booking_id: Annotated[int, Path(alias="id", description="ID брони", ge=1)],
+    booking_id: Annotated[int, Path(alias="id", description="ID брони")],
     service: Annotated[BookingService, Depends(get_booking_service)],
 ) -> BookingOut:
     booking = await service.get_booking_by_id(booking_id)
@@ -89,7 +89,7 @@ async def get_booking(
     ),
 )
 async def cancel_booking(
-    booking_id: Annotated[int, Path(alias="id", description="ID брони", ge=1)],
+    booking_id: Annotated[int, Path(alias="id", description="ID брони")],
     service: Annotated[BookingService, Depends(get_booking_service)],
 ) -> BookingOut:
     booking = await service.cancel_booking(booking_id)

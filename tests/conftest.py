@@ -60,9 +60,14 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+async def client() -> AsyncGenerator[AsyncClient, None]:
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
-        yield db_session
+        async with TestingSessionLocal() as session:
+            try:
+                yield session
+            except Exception:
+                await session.rollback()
+                raise
 
     app.dependency_overrides[get_db] = override_get_db
 

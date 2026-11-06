@@ -37,6 +37,7 @@ async def test_create_booking_success(client: AsyncClient):
     assert data["guests"] == 4
     assert data["status"] == "active"
     assert "created_at" in data
+    assert data["created_at"].endswith("+00:00") or data["created_at"].endswith("Z")
 
 
 @pytest.mark.asyncio
@@ -72,6 +73,21 @@ async def test_create_booking_name_validation(client: AsyncClient):
     assert res.status_code == 422
 
     res = await client.post("/bookings", json={**base_payload, "name": "---"})
+    assert res.status_code == 422
+
+    # Tab not allowed
+    res = await client.post("/bookings", json={**base_payload, "name": "Анна\tПетрова"})
+    assert res.status_code == 422
+
+    # 50 chars after strip with spaces around -> 201
+    name_50 = "   " + "А" * 50 + "   "
+    res = await client.post("/bookings", json={**base_payload, "name": name_50})
+    assert res.status_code == 201
+    assert res.json()["name"] == "А" * 50
+
+    # 51 chars after strip with spaces around -> 422
+    name_51 = "   " + "А" * 51 + "   "
+    res = await client.post("/bookings", json={**base_payload, "name": name_51})
     assert res.status_code == 422
 
     # Valid name with spaces stripped
@@ -217,6 +233,16 @@ async def test_create_booking_guests_validation(client: AsyncClient):
     res = await client.post("/bookings", json={**base_payload, "guests": 13})
     assert res.status_code == 422
 
+    # String, float, bool not allowed (StrictInt)
+    res = await client.post("/bookings", json={**base_payload, "guests": "5"})
+    assert res.status_code == 422
+
+    res = await client.post("/bookings", json={**base_payload, "guests": 5.0})
+    assert res.status_code == 422
+
+    res = await client.post("/bookings", json={**base_payload, "guests": True})
+    assert res.status_code == 422
+
     # 1 guest -> 201
     res = await client.post("/bookings", json={**base_payload, "guests": 1})
     assert res.status_code == 201
@@ -251,6 +277,15 @@ async def test_get_booking_by_id(client: AsyncClient):
     assert not_found_res.status_code == 404
     assert not_found_res.json() == {"detail": "Booking not found"}
 
+    # ID 0 and negative -> 404 Not Found (valid integer format, but no such booking)
+    res_0 = await client.get("/bookings/0")
+    assert res_0.status_code == 404
+    assert res_0.json() == {"detail": "Booking not found"}
+
+    res_neg = await client.get("/bookings/-1")
+    assert res_neg.status_code == 404
+    assert res_neg.json() == {"detail": "Booking not found"}
+
     # Invalid id type -> 422
     bad_id_res = await client.get("/bookings/not-an-id")
     assert bad_id_res.status_code == 422
@@ -283,6 +318,11 @@ async def test_cancel_booking(client: AsyncClient):
     not_found_res = await client.delete("/bookings/888888")
     assert not_found_res.status_code == 404
     assert not_found_res.json() == {"detail": "Booking not found"}
+
+    # Cancel id 0 -> 404
+    res_cancel_0 = await client.delete("/bookings/0")
+    assert res_cancel_0.status_code == 404
+    assert res_cancel_0.json() == {"detail": "Booking not found"}
 
 
 @pytest.mark.asyncio

@@ -1,5 +1,5 @@
 import re
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from enum import StrEnum
 from typing import Any, Self
 from zoneinfo import ZoneInfo
@@ -8,6 +8,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    StrictInt,
     field_serializer,
     field_validator,
     model_validator,
@@ -16,7 +17,7 @@ from pydantic import (
 from app.core.config import settings
 
 PHONE_RE = re.compile(r"(\+7|8)\d{10}")
-NAME_RE = re.compile(r"^[A-Za-zА-Яа-яЁё\s\-]+$")
+NAME_RE = re.compile(r"^[A-Za-zА-Яа-яЁё -]+$")
 TIME_FORMAT_RE = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
 
 
@@ -30,7 +31,14 @@ class BookingBase(BaseModel):
     phone: str = Field(examples=["+79991234567"])
     booking_date: date
     booking_time: time = Field(examples=["19:00"])
-    guests: int = Field(ge=1, le=12)
+    guests: StrictInt = Field(ge=1, le=12)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def strip_name(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return value.strip()
+        return value
 
     @field_serializer("booking_time", when_used="json")
     def serialize_booking_time(self, v: time) -> str:
@@ -114,6 +122,12 @@ class BookingOut(BookingBase):
     id: int
     status: BookingStatus
     created_at: datetime
+
+    @field_serializer("created_at", when_used="json")
+    def serialize_created_at(self, v: datetime) -> str:
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=UTC)
+        return v.isoformat()
 
 
 class BookingList(BaseModel):

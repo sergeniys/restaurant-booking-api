@@ -12,18 +12,16 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_PREFIX: str = ""
 
-    # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./bookings.db"
     ECHO_SQL: bool = False
 
-    # Business Rules
     MAX_TABLES_PER_SLOT: int = 10
     BOOKING_MAX_DAYS_AHEAD: int = 90
     BOOKING_OPEN_HOUR: int = 12
     BOOKING_CLOSE_HOUR: int = 22
     TIMEZONE: str = "Europe/Moscow"
 
-    # Pagination Defaults
+    # Константы для пагинации
     DEFAULT_LIMIT: int = 20
     MAX_LIMIT: int = 100
 

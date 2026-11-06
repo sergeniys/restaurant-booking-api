@@ -1,0 +1,17 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: restaurant_booking_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/bookings.db
+      - TIMEZONE=Europe/Moscow
+    volumes:
+      - booking_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  booking_data:
